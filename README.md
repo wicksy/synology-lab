@@ -1,6 +1,6 @@
 ### Tools for my Synology NAS (DS415+)
 
-# Usually run inside my wicksy/synology Docker container (based on Alpine Linux), which contains some tooling:
+Usually run inside my wicksy/synology Docker container (based on Alpine Linux), which contains some tooling:
 
 - git
 - curl
