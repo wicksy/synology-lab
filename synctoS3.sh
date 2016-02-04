@@ -7,6 +7,8 @@ export AWS_DEFAULT_REGION="eu-west-1"
 media="*foo*.mp4 *bar*.mp4"
 source="/tmp/Downloads/"
 bucket="s3://wicksy-media/automated/"
+finished="/tmp/Downloads/FINISHED"
+rm -f ${finished}
 
 for files in ${media}
 do
@@ -20,5 +22,7 @@ do
       sleep 30
     fi
   done
+  find "${source}" -name "${files}" -exec ls -ld {} \; >> ${finished}
 done
+aws s3 cp "${finished}" "${bucket}" --sse
 exit 0
