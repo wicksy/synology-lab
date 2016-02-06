@@ -9,4 +9,3 @@ do
 done
 /usr/local/bin/filebot -script 'fn:amc' /volume1/Downloads/ --output '/volume1/Media/Not Watched Yet' --action move -non-strict --conflict auto --lang en --def 'music=y' 'unsorted=y' 'clean=y' 'deleteAfterExtract=y' 'excludeList=.excludes' --log info --log-file '/volume3/@appstore/filebot-node/filebot.log' >> '/volume3/@appstore/filebot-node/log/1441471372245.log' 2>&1
 exit 0
-ds415plus>
