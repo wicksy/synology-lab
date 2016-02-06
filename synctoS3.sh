@@ -6,7 +6,7 @@ export AWS_DEFAULT_REGION="eu-west-1"
 
 media="*foo*.mp4 *bar*.mp4"
 source="/tmp/Downloads/"
-bucket="s3://wicksy-media/automated/"
+bucket="s3://bucket-name/automated/"
 finished="/tmp/Downloads/FINISHED"
 rm -f ${finished}
 
@@ -24,5 +24,9 @@ do
   done
   find "${source}" -name "${files}" -exec ls -ld {} \; >> ${finished}
 done
-aws s3 cp "${finished}" "${bucket}" --sse
+if [[ ! -s ${finished} ]] ; then
+  rm -f ${finished}
+else
+  aws s3 cp "${finished}" "${bucket}" --sse
+fi
 exit 0
