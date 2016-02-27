@@ -10,6 +10,7 @@ bucket="s3://bucket-name/automated/"
 
 finished="/tmp/Downloads/FINISHED.$(date '+%A')"
 pid=$$
+email="/tmp/Downloads/EMAIL"
 
 for files in ${media}
 do
@@ -23,9 +24,18 @@ do
       sleep 30
     fi
   done
+
   (cat "${finished}" ; find "${source}" -name "${files}" -exec ls -ld {} \;) | sort -u > "${finished}.${pid}"
   mv -f "${finished}.${pid}" "${finished}"
+  for filenames in $(find "${source}" -name "${files}")
+  do
+    filename=$(basename "${filenames}")
+    content="Uploaded ${filename}"
+    echo "${content}" >> "${email}"
+  done
+
 done
+
 if [[ -f "${finished}" ]] ; then
   if [[ ! -s "${finished}" ]] ; then
     rm -f "${finished}"
