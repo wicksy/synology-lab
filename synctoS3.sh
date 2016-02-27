@@ -7,6 +7,7 @@ export AWS_DEFAULT_REGION="eu-west-1"
 media="*foo*.mp4 *bar*.mp4"
 source="/tmp/Downloads/"
 bucket="s3://bucket-name/automated/"
+
 finished="/tmp/Downloads/FINISHED.$(date '+%A')"
 pid=$$
 
@@ -25,10 +26,12 @@ do
   (cat "${finished}" ; find "${source}" -name "${files}" -exec ls -ld {} \;) | sort -u > "${finished}.${pid}"
   mv -f "${finished}.${pid}" "${finished}"
 done
-if [[ ! -s "${finished}" ]] ; then
-  rm -f "${finished}"
-else
-  aws s3 cp "${finished}" "${bucket}" --sse
+if [[ -f "${finished}" ]] ; then
+  if [[ ! -s "${finished}" ]] ; then
+    rm -f "${finished}"
+  else
+    aws s3 cp "${finished}" "${bucket}" --sse
+  fi
 fi
 
 find "${source}" -type f -name 'FINISHED\.*' -mtime +3 -delete
