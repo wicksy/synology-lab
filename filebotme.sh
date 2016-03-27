@@ -4,7 +4,7 @@ addressees="user@email.com anotheruser@email.com"
 subject="Subject of email here"
 
 cd /tmp
-docker run -v /volume1/Downloads/:/tmp/Downloads/ wicksy/synology:latest bash -x /tmp/Downloads/bin/synctoS3.sh > /tmp/synctos3.log 2>&1
+docker run -it --env-file=/usr/local/etc/synctoS3.env --volume=/volume1/Downloads/:/tmp/Downloads/ wicksy/synology:latest /scripts/synology-task-wrapper.py > /tmp/synctos3.log 2>&1
 chmod 600 /tmp/synctos3.log
 
 if [[ -s /volume1/Downloads/EMAIL ]] ; then
