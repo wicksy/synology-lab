@@ -1,18 +1,24 @@
 #!/bin/bash
 
-export AWS_ACCESS_KEY_ID="REDACTED"
-export AWS_SECRET_ACCESS_KEY="REDACTED"
-export AWS_DEFAULT_REGION="eu-west-1"
+# Variables expected to be passed in here:
+#
+# DSM_SECRETS (Executable bash setting variables for secrets e.g. AWS keys)
+# DSM_MEDIA_SOURCE_DIR (Where to search for files to sync up to S3)
+# DSM_MEDIA_S3_BUCKET (What S3 bucket to sync files up to)
+# DSM_MEDIA_FILES (The filespecs to search for e.g. Movie*.mp4)
+#
+# Designed to work with https://github.com/wicksy/docker-lab/blob/master/synology/docker/py/synology-task-wrapper.py
 
-media="*foo*.mp4 *bar*.mp4"
-source="/tmp/Downloads/"
-bucket="s3://bucket-name/automated/"
+source "${DSM_SECRETS}"
+
+source=${DSM_MEDIA_SOURCE_DIR}
+bucket=${DSM_MEDIA_S3_BUCKET}
 
 finished="/tmp/Downloads/FINISHED.$(date '+%A')"
 pid=$$
 email="/tmp/Downloads/EMAIL"
 
-for files in ${media}
+for files in ${DSM_MEDIA_FILES}
 do
   rc=1
   while [[ ${rc} -ne 0 ]]
