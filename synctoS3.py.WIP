@@ -1,0 +1,104 @@
+#!/usr/bin/env python
+#
+# Python version of synctoS3.sh (https://github.com/wicksy/synology-lab/blob/master/synctoS3.sh)
+#
+# Expects a number of environment variables to be set by the caller:
+#
+# DSM_SECRETS (Secrets defined as variables and set via execfile())
+# DSM_MEDIA_SOURCE_DIR (Where to search for files to sync up to S3)
+# DSM_MEDIA_S3_BUCKET (What S3 bucket to sync files up to)
+# DSM_MEDIA_FILES (The filespecs to search for e.g. Movie*.mp4)
+#
+# Tested with:
+#
+# Synology DS415+
+# DSM 5.2-5644 Update 3
+# Docker 1.6.2-0036 (on DSM)
+# Gitlab 8.2.3-0015 (on DSM)
+#
+# It is recommened that the repository containing secrets is kept private for obvious reasons. For example, hosted
+# by Gitlab running on the same NAS.
+#
+
+# Imports
+#
+import boto3
+import os
+import shutil
+import subprocess
+import sys
+
+# Functions
+#
+
+# Clean up and exit
+#
+def die(code):
+
+  print("Cleaning up")
+
+  print("Exit with code " + str(code))
+  sys.exit(code)
+
+# Make a directory
+#
+def ensure_dir(MKDIR):
+  DIR = os.path.dirname(MKDIR)
+  if not os.path.exists(DIR):
+    os.makedirs(DIR)
+
+# Get and set variables
+#
+DSM_SECRETS = str(os.environ.get('DSM_SECRETS'))
+DSM_MEDIA_SOURCE_DIR = str(os.environ.get('DSM_MEDIA_SOURCE_DIR'))
+DSM_MEDIA_S3_BUCKET = str(os.environ.get('DSM_MEDIA_S3_BUCKET'))
+DSM_MEDIA_FILES = str(os.environ.get('DSM_MEDIA_FILES'))
+
+# Exit codes
+#
+EXIT_ALL_OK = 0
+EXIT_NO_SECRETS = 100
+EXIT_SECRETS_FAIL = 110
+EXIT_BOTO3_CLIENT = 120
+
+# Get involved!
+#
+if DSM_SECRETS != 'None' and DSM_SECRETS.strip():
+  print("Secrets stored in " + DSM_SECRETS)
+  pass
+else:
+  print("No secrets file specitied")
+  die(EXIT_NO_SECRETS)
+
+# Set Secrets
+#
+print("Setting Secrets from " + DSM_SECRETS)
+try:
+  execfile(DSM_SECRETS)
+except:
+  print("Error setting Secrets")
+  die(EXIT_SECRETS_FAIL)
+
+# Try and start an S3 boto3 session
+#
+print("Starting boto3 session to S3 bucket " + DSM_MEDIA_S3_BUCKET)
+try:
+  client = boto3.client(
+    's3',
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    region_name=AWS_DEFAULT_REGION
+  )
+except:
+  print("Error starting S3 boto3 session")
+  die(EXIT_BOTO3_CLIENT)
+
+response = client.list_objects(
+  Bucket=DSM_MEDIA_S3_BUCKET
+)
+
+print(response)
+
+# Fin!
+#
+die(EXIT_ALL_OK)
