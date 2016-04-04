@@ -23,10 +23,13 @@
 # Imports
 #
 import boto3
+import glob
+import math
 import os
 import shutil
 import subprocess
 import sys
+from filechunkio import FileChunkIO
 
 # Functions
 #
@@ -36,7 +39,6 @@ import sys
 def die(code):
 
   print("Cleaning up")
-
   print("Exit with code " + str(code))
   sys.exit(code)
 
@@ -53,6 +55,7 @@ DSM_SECRETS = str(os.environ.get('DSM_SECRETS'))
 DSM_MEDIA_SOURCE_DIR = str(os.environ.get('DSM_MEDIA_SOURCE_DIR'))
 DSM_MEDIA_S3_BUCKET = str(os.environ.get('DSM_MEDIA_S3_BUCKET'))
 DSM_MEDIA_FILES = str(os.environ.get('DSM_MEDIA_FILES'))
+CHUNK_SIZE = 10485760
 
 # Exit codes
 #
@@ -60,15 +63,30 @@ EXIT_ALL_OK = 0
 EXIT_NO_SECRETS = 100
 EXIT_SECRETS_FAIL = 110
 EXIT_BOTO3_CLIENT = 120
+EXIT_NO_SOURCE_DIR = 130
+EXIT_BAD_SOURCE_DIR = 140
+EXIT_NO_MEDIA_FILES = 150
+EXIT_CHUNK_ERROR = 160
 
-# Get involved!
+# Get involved! Check mandatory variables have values and exit if not.
 #
 if DSM_SECRETS != 'None' and DSM_SECRETS.strip():
-  print("Secrets stored in " + DSM_SECRETS)
-  pass
+  print("Secrets stored in: " + DSM_SECRETS)
 else:
   print("No secrets file specitied")
   die(EXIT_NO_SECRETS)
+
+if DSM_MEDIA_SOURCE_DIR != 'None' and DSM_MEDIA_SOURCE_DIR.strip():
+  print("Source directory to search: " + DSM_MEDIA_SOURCE_DIR)
+else:
+  print("No source directory specified")
+  die(EXIT_NO_SOURCE_DIR)
+
+if DSM_MEDIA_FILES != 'None' and DSM_MEDIA_FILES.strip():
+  print("Media filespecs to search for: " + DSM_MEDIA_FILES)
+else:
+  print("No media files specified")
+  die(EXIT_NO_MEDIA_FILES)
 
 # Set Secrets
 #
@@ -78,6 +96,12 @@ try:
 except:
   print("Error setting Secrets")
   die(EXIT_SECRETS_FAIL)
+
+# Check to see if DSM_MEDIA_SOURCE_DIR exists and exit if not
+#
+if not os.path.exists(DSM_MEDIA_SOURCE_DIR):
+  print("Error cannot find directory " + DSM_MEDIA_SOURCE_DIR)
+  die(EXIT_BAD_SOURCE_DIR)
 
 # Try and start an S3 boto3 session
 #
@@ -93,11 +117,45 @@ except:
   print("Error starting S3 boto3 session")
   die(EXIT_BOTO3_CLIENT)
 
-response = client.list_objects(
-  Bucket=DSM_MEDIA_S3_BUCKET
-)
+try:
+  response = client.list_objects(
+    Bucket=DSM_MEDIA_S3_BUCKET
+  )
+except:
+  print("Error listing objects in S3 bucket")
+  die(EXIT_BOTO3_CLIENT)
 
-print(response)
+# For each filespec
+#
+filespecs = DSM_MEDIA_FILES.split()
+to_process = []
+for filespec in filespecs:
+
+# Search for files to process
+#
+  for root, directories, filenames in os.walk(DSM_MEDIA_SOURCE_DIR):
+    for directory in directories:
+      thisdir = os.path.join(root, directory)
+      spec = thisdir + "/" + filespec
+      to_process += glob.glob(spec)
+
+# Process each file
+#
+for uploadfile in to_process:
+  print("Processing file: " + uploadfile)
+  source_size = os.stat(uploadfile).st_size
+  chunk_count = int(math.ceil(source_size / float(CHUNK_SIZE)))
+
+# Process source file in chunks
+  try:
+    for count in range(chunk_count):
+      offset = CHUNK_SIZE * count
+      bytes = min(CHUNK_SIZE, source_size - offset)
+      with FileChunkIO(uploadfile, 'r', offset=offset, bytes=bytes) as fp:
+        print(fp)
+  except:
+    print("Error Chunking file " + filespec)
+    die(EXIT_CHUNK_ERROR)
 
 # Fin!
 #
