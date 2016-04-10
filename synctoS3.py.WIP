@@ -56,6 +56,7 @@ DSM_MEDIA_SOURCE_DIR = str(os.environ.get('DSM_MEDIA_SOURCE_DIR'))
 DSM_MEDIA_S3_BUCKET = str(os.environ.get('DSM_MEDIA_S3_BUCKET'))
 DSM_MEDIA_FILES = str(os.environ.get('DSM_MEDIA_FILES'))
 CHUNK_SIZE = 10485760
+CHUNK_SIZE = 1048576
 
 # Exit codes
 #
@@ -66,7 +67,9 @@ EXIT_BOTO3_CLIENT = 120
 EXIT_NO_SOURCE_DIR = 130
 EXIT_BAD_SOURCE_DIR = 140
 EXIT_NO_MEDIA_FILES = 150
-EXIT_CHUNK_ERROR = 160
+EXIT_CREATE_MP_UPLOAD = 160
+EXIT_UPLOAD_PART_FAIL = 170
+EXIT_CHUNK_ERROR = 180
 
 # Get involved! Check mandatory variables have values and exit if not.
 #
@@ -138,6 +141,7 @@ for filespec in filespecs:
       thisdir = os.path.join(root, directory)
       spec = thisdir + "/" + filespec
       to_process += glob.glob(spec)
+  to_process += glob.glob(DSM_MEDIA_SOURCE_DIR + "/" + filespec)
 
 # Process each file
 #
@@ -145,18 +149,69 @@ for uploadfile in to_process:
   print("Processing file: " + uploadfile)
   source_size = os.stat(uploadfile).st_size
   chunk_count = int(math.ceil(source_size / float(CHUNK_SIZE)))
+  uploadkey = os.path.basename(uploadfile)
+  parts_info = []
+
+# Create MultiPart Upload
+#
+  try:
+    mpu = client.create_multipart_upload(
+      Bucket=DSM_MEDIA_S3_BUCKET,
+      Key=uploadkey,
+      ServerSideEncryption='AES256'
+    )
+  except:
+    print("Error creating multipart upload for " + uploadfile)
+    die(EXIT_CREATE_MP_UPLOAD)
 
 # Process source file in chunks
-  try:
-    for count in range(chunk_count):
-      offset = CHUNK_SIZE * count
-      bytes = min(CHUNK_SIZE, source_size - offset)
-      with FileChunkIO(uploadfile, 'r', offset=offset, bytes=bytes) as fp:
-        print(fp)
-  except:
-    print("Error Chunking file " + filespec)
-    die(EXIT_CHUNK_ERROR)
+#
+  #try:
+  for count in range(chunk_count):
+    print(count)
+    offset = CHUNK_SIZE * count
+    bytes = min(CHUNK_SIZE, source_size - offset)
+    with FileChunkIO(uploadfile, 'r', offset=offset, bytes=bytes) as fp:
+        #try:
+      print(fp)
+      print(mpu['UploadId'])
+      part = client.upload_part(
+        Body=fp,
+        Bucket=DSM_MEDIA_S3_BUCKET,
+        Key=uploadkey,
+        PartNumber=count+1,
+        UploadId=mpu['UploadId']
+      )
+      print(part)
+        #except:
+          #print("Error uploading part " + str(count+1) + " of file")
+          #die(EXIT_UPLOAD_PART_FAIL)
+
+      partinfo = {'PartNumber': count+1, 'ETag': part['ETag']}
+      parts_info.append(partinfo)
+
+  #except:
+  #  print("Error Chunking file " + uploadfile)
+  #  die(EXIT_CHUNK_ERROR)
+
+  part_info = {
+    'Parts': parts_info
+  }
+  print(part_info)
+
+  client.complete_multipart_upload(
+    Bucket=DSM_MEDIA_S3_BUCKET,
+    Key=uploadkey,
+    UploadId=mpu['UploadId'],
+    MultipartUpload=part_info
+  )
+
+  client.complete_multipart_upload(
+    Bucket=DSM_MEDIA_S3_BUCKET,
+    Key=uploadkey,
+    UploadId=mpu['UploadId']
+  )
 
 # Fin!
-#
+# 
 die(EXIT_ALL_OK)
