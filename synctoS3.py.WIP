@@ -56,7 +56,6 @@ DSM_MEDIA_SOURCE_DIR = str(os.environ.get('DSM_MEDIA_SOURCE_DIR'))
 DSM_MEDIA_S3_BUCKET = str(os.environ.get('DSM_MEDIA_S3_BUCKET'))
 DSM_MEDIA_FILES = str(os.environ.get('DSM_MEDIA_FILES'))
 CHUNK_SIZE = 10485760
-CHUNK_SIZE = 1048576
 
 # Exit codes
 #
@@ -166,33 +165,44 @@ for uploadfile in to_process:
 
 # Process source file in chunks
 #
-  #try:
-  for count in range(chunk_count):
-    print(count)
-    offset = CHUNK_SIZE * count
-    bytes = min(CHUNK_SIZE, source_size - offset)
-    with FileChunkIO(uploadfile, 'r', offset=offset, bytes=bytes) as fp:
-        #try:
-      print(fp)
-      print(mpu['UploadId'])
-      part = client.upload_part(
-        Body=fp,
-        Bucket=DSM_MEDIA_S3_BUCKET,
-        Key=uploadkey,
-        PartNumber=count+1,
-        UploadId=mpu['UploadId']
-      )
-      print(part)
-        #except:
-          #print("Error uploading part " + str(count+1) + " of file")
-          #die(EXIT_UPLOAD_PART_FAIL)
+  try:
+    for count in range(chunk_count):
+      print(count)
+      offset = CHUNK_SIZE * count
+      bytes = min(CHUNK_SIZE, source_size - offset)
+      with FileChunkIO(uploadfile, 'r', offset=offset, bytes=bytes) as fp:
+        try:
+          body = fp.read()
+          part = client.upload_part(
+            Body=body,
+            Bucket=DSM_MEDIA_S3_BUCKET,
+            Key=uploadkey,
+            PartNumber=count+1,
+            UploadId=mpu['UploadId']
+          )
+          print(part)
+        except:
+          print("Error uploading part " + str(count+1) + " of file")
+          print("Aborting upload")
+          client.abort_multipart_upload(
+            Bucket=DSM_MEDIA_S3_BUCKET,
+            Key=uploadkey,
+            UploadId=mpu['UploadId']
+          )
+          die(EXIT_UPLOAD_PART_FAIL)
 
-      partinfo = {'PartNumber': count+1, 'ETag': part['ETag']}
-      parts_info.append(partinfo)
+        partinfo = {'PartNumber': count+1, 'ETag': part['ETag']}
+        parts_info.append(partinfo)
 
-  #except:
-  #  print("Error Chunking file " + uploadfile)
-  #  die(EXIT_CHUNK_ERROR)
+  except:
+    print("Error Chunking file " + uploadfile)
+    print("Aborting upload")
+    client.abort_multipart_upload(
+      Bucket=DSM_MEDIA_S3_BUCKET,
+      Key=uploadkey,
+      UploadId=mpu['UploadId']
+    )
+    die(EXIT_CHUNK_ERROR)
 
   part_info = {
     'Parts': parts_info
@@ -206,12 +216,6 @@ for uploadfile in to_process:
     MultipartUpload=part_info
   )
 
-  client.complete_multipart_upload(
-    Bucket=DSM_MEDIA_S3_BUCKET,
-    Key=uploadkey,
-    UploadId=mpu['UploadId']
-  )
-
 # Fin!
-# 
+#
 die(EXIT_ALL_OK)
