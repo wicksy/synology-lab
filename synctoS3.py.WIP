@@ -49,6 +49,18 @@ def ensure_dir(MKDIR):
   if not os.path.exists(DIR):
     os.makedirs(DIR)
 
+# Test for debug switch
+#
+try:
+  ARG = sys.argv[1]
+except:
+  ARG = ""
+
+if ARG == '-d':
+  DEBUG=True
+else:
+  DEBUG=False
+
 # Get and set variables
 #
 DSM_SECRETS = str(os.environ.get('DSM_SECRETS'))
@@ -129,6 +141,7 @@ except:
 
 # For each filespec
 #
+print("Chunking files in " + str(CHUNK_SIZE) + " byte parts")
 filespecs = DSM_MEDIA_FILES.split()
 to_process = []
 for filespec in filespecs:
@@ -140,7 +153,12 @@ for filespec in filespecs:
       thisdir = os.path.join(root, directory)
       spec = thisdir + "/" + filespec
       to_process += glob.glob(spec)
+      if DEBUG:
+        print("DEBUG: File spec " + str(spec))
+        print("DEBUG: To Process " + str(to_process))
   to_process += glob.glob(DSM_MEDIA_SOURCE_DIR + "/" + filespec)
+  if DEBUG:
+    print("DEBUG: Full list to process " + str(to_process))
 
 # Process each file
 #
@@ -150,6 +168,10 @@ for uploadfile in to_process:
   chunk_count = int(math.ceil(source_size / float(CHUNK_SIZE)))
   uploadkey = os.path.basename(uploadfile)
   parts_info = []
+  if DEBUG:
+    print("DEBUG: Source size " + str(source_size))
+    print("DEBUG: Chunk count " + str(chunk_count))
+    print("DEBUG: Uploadkey " + str(uploadkey))
 
 # Create MultiPart Upload
 #
@@ -167,9 +189,12 @@ for uploadfile in to_process:
 #
   try:
     for count in range(chunk_count):
-      print(count)
+      print("Uploading part " + str(count+1))
       offset = CHUNK_SIZE * count
       bytes = min(CHUNK_SIZE, source_size - offset)
+      if DEBUG:
+        print("DEBUG: Offset " + str(offset))
+        print("DEBUG: bytes " + str(bytes))
       with FileChunkIO(uploadfile, 'r', offset=offset, bytes=bytes) as fp:
         try:
           body = fp.read()
@@ -180,7 +205,8 @@ for uploadfile in to_process:
             PartNumber=count+1,
             UploadId=mpu['UploadId']
           )
-          print(part)
+          if DEBUG:
+            print("DEBUG: Part output " + str(part))
         except:
           print("Error uploading part " + str(count+1) + " of file")
           print("Aborting upload")
@@ -192,6 +218,8 @@ for uploadfile in to_process:
           die(EXIT_UPLOAD_PART_FAIL)
 
         partinfo = {'PartNumber': count+1, 'ETag': part['ETag']}
+        if DEBUG:
+          print("DEBUG: Part Info " + str(partinfo))
         parts_info.append(partinfo)
 
   except:
@@ -207,7 +235,8 @@ for uploadfile in to_process:
   part_info = {
     'Parts': parts_info
   }
-  print(part_info)
+  if DEBUG:
+    print("DEBUG: Parts Info " + str(part_info))
 
   client.complete_multipart_upload(
     Bucket=DSM_MEDIA_S3_BUCKET,
