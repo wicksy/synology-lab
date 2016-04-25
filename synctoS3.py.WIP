@@ -87,7 +87,7 @@ EXIT_CHUNK_ERROR = 180
 if DSM_SECRETS != 'None' and DSM_SECRETS.strip():
   print("Secrets stored in: " + DSM_SECRETS)
 else:
-  print("No secrets file specitied")
+  print("No secrets file specified")
   die(EXIT_NO_SECRETS)
 
 if DSM_MEDIA_SOURCE_DIR != 'None' and DSM_MEDIA_SOURCE_DIR.strip():
@@ -185,7 +185,8 @@ for uploadfile in to_process:
     print("Error creating multipart upload for " + uploadfile)
     die(EXIT_CREATE_MP_UPLOAD)
 
-# Process source file in chunks
+# Process source file in chunks uploading each as a part of
+# a multipart upload (and abort on exception)
 #
   try:
     for count in range(chunk_count):
@@ -222,6 +223,8 @@ for uploadfile in to_process:
           print("DEBUG: Part Info " + str(partinfo))
         parts_info.append(partinfo)
 
+# Problems chunking the file so abort the upload
+#
   except:
     print("Error Chunking file " + uploadfile)
     print("Aborting upload")
@@ -232,6 +235,8 @@ for uploadfile in to_process:
     )
     die(EXIT_CHUNK_ERROR)
 
+# Set multipart part info and complete upload
+#
   part_info = {
     'Parts': parts_info
   }
