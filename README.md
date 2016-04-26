@@ -21,6 +21,6 @@ Quick and dirty script to run synctoS3.sh via docker and then run filebot (Synol
 
 Short bash script (in lieu of a decent Python version) to sync media to an S3 bucket using AWS CLI. Will be re-written to use boto, etc when I get time. Run via docker with a volume mount so stored on a NAS volume for now. Will eventually be pulled down from a github repo by a stub script, which will effectively be told what to do (where to pull from, what to run, etc) via docker environment variables.
 
-##### synctoS3.py.WIP
+##### synctoS3.py
 
-Work in Progress version of synctoS3.sh written in Python. Effectively does exactly the same as the bash script execpt using boto3 et al.
+Python version of synctoS3.sh using boto3, multipart upload, etc. 
