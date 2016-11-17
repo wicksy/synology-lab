@@ -51,11 +51,15 @@ done
 
 # Anything left move away so this script keeps trying to process it during subsequent calls
 #
-for unmoved in $(find /volume1/Downloads/ -type f -name '*.mp4' -o -name '*.avi' -o -name '*.mkv')
+sdir="/volume1/Downloads"
+find "${sdir}/" -type f -name '*.mp4' -o -name '*.avi' -o -name '*.mkv' | while read unmoved
 do
   echo ${unmoved}
   mv -f "${unmoved}" "/volume1/Media/Not Watched Yet/Unsorted/"
-  rmdir "$(dirname ${unmoved})"
+  removedir=$(dirname "${unmoved}")
+  if [[ "${removedir}" != "${sdir}" ]] ; then
+    rmdir $(dirname "${unmoved}")
+  fi
 done
 
 exit 0
