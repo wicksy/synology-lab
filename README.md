@@ -15,12 +15,13 @@ Usually run inside my wicksy/synology Docker container (based on Alpine Linux), 
 
 ##### filebotme.sh
 
-Quick and dirty script to run synctoS3.sh via docker and then run filebot (Synology package) to move any downloaded media to another location on another volume. They are renamed and stored in folders with appropaite names (based on filebot rules). Task run hourly via DSM task scheduler on the NAS.
+Script that runs a docker container [(wicksy/synology)](https://github.com/wicksy/docker-lab/tree/master/synology) that fires off a task wrapper to run synctoS3.py (see below) to upload selected media to an AWS S3 bucket. It then cleans up old docker exited containers and dangling images before running the [filebot](http://www.filebot.net/) package (on the NAS) to rename media files and move into folders with appropriate names (based on filebot rules). Finally it cleans up the source area of any unprocessed files (usually duplicates so ignored by filebot). Task runs hourly via DSM task scheduler on the NAS.
 
 ##### synctoS3.sh
 
-Short bash script (in lieu of a decent Python version) to sync media to an S3 bucket using AWS CLI. Will be re-written to use boto, etc when I get time. Run via docker with a volume mount so stored on a NAS volume for now. Will eventually be pulled down from a github repo by a stub script, which will effectively be told what to do (where to pull from, what to run, etc) via docker environment variables.
+Simple bash script (in lieu of a decent Python version) to sync media to an S3 bucket using AWS CLI. Eventually re-written in python to use boto (see below). Run via docker with a volume mount.
 
 ##### synctoS3.py
 
-Python version of synctoS3.sh using boto3, multipart upload, etc. 
+Python version of synctoS3.sh using boto3, multipart upload, etc. Designed to be pulled in automatically from this repository by a [task wrapper](https://github.com/wicksy/docker-lab/blob/master/synology/docker/py/synology-task-wrapper.py) running inside of a [docker container](https://github.com/wicksy/docker-lab/tree/master/synology) designed to run on the (Synology) NAS.
+
