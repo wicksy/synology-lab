@@ -5,9 +5,17 @@
 addressees="user@email.com anotheruser@email.com"
 subject="Subject of email here"
 
-# Copy selected files to S3 bucket
+# Remove [] from any directory names as it messes up the glob in the python task
 #
 cd /tmp
+for dir in $(find /volume1/Downloads/ -type d -name '*\[*\]*')
+do
+  renamed="$(echo ${dir} | tr -d '[]')"
+  mv ${dir} ${renamed}
+done
+
+# Copy selected files to S3 bucket
+#
 docker run --env-file=/usr/local/etc/synctoS3.env --volume=/volume1/Downloads/:/tmp/Downloads/ wicksy/synology:latest /scripts/synology-task-wrapper.py > /tmp/synctos3.log 2>&1
 chmod 600 /tmp/synctos3.log
 
