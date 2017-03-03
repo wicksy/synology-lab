@@ -22,7 +22,7 @@ chmod 600 /tmp/synctos3.log
 # Look for any files uploaded to S3 in the log and create email content from any
 #
 if [[ "$(grep -c 'Processing file: .*' /tmp/synctos3.log)" -gt 0 ]]; then
-  content="$(grep 'Processing file: .*' /tmp/synctos3.log)"
+  content=`grep 'Processing file: .*' /tmp/synctos3.log | tr -d "'"`
   echo "${content}" > /volume1/Downloads/EMAIL
 fi
 
