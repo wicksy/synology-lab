@@ -19,13 +19,9 @@ Script that runs a docker container [(wicksy/synology)](https://github.com/wicks
 
 ##### synctoS3.sh
 
-<p align="justify">
 Simple bash script (in lieu of a decent Python version) to sync media to an S3 bucket using AWS CLI. Eventually re-written in python to use boto (see below). Run via docker with a volume mount.
-</p>
 
 ##### synctoS3.py
 
-<p align="justify">
 Python version of synctoS3.sh using boto3, multipart upload, etc. Designed to be pulled in automatically from this repository by a [task wrapper](https://github.com/wicksy/docker-lab/blob/master/synology/docker/py/synology-task-wrapper.py) running inside of a [docker container](https://github.com/wicksy/docker-lab/tree/master/synology) designed to run on the (Synology) NAS.
-</p>
 
