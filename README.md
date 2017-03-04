@@ -15,9 +15,7 @@ Usually run inside my wicksy/synology Docker container (based on Alpine Linux), 
 
 ##### filebotme.sh
 
-<p align="justify">
 Script that runs a docker container [(wicksy/synology)](https://github.com/wicksy/docker-lab/tree/master/synology) that fires off a task wrapper to run synctoS3.py (see below) to upload selected media to an AWS S3 bucket. It then cleans up old docker exited containers and dangling images before running the [filebot](http://www.filebot.net/) package (on the NAS) to rename media files and move into folders with appropriate names (based on filebot rules). Finally it cleans up the source area of any unprocessed files (usually duplicates so ignored by filebot). Task runs hourly via DSM task scheduler on the NAS.
-</p>
 
 ##### synctoS3.sh
 
