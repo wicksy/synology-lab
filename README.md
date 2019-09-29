@@ -25,3 +25,6 @@ Simple bash script (in lieu of a decent Python version) to sync media to an S3 b
 
 Python version of synctoS3.sh using boto3, multipart upload, etc. Designed to be pulled in automatically from this repository by a [task wrapper](https://github.com/wicksy/docker-lab/blob/master/synology/docker/py/synology-task-wrapper.py) running inside of a [docker container](https://github.com/wicksy/docker-lab/tree/master/synology) designed to run on the (Synology) NAS.
 
+##### restartplex.sh
+
+Simple bash script to reliably restart Plex Media Server from the command line as Task Scheduler Service restarts seem flaky at best with the latest version.
