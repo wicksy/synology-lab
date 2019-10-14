@@ -1,7 +1,7 @@
 #!/bin/sh -x
 
 date
-pkill Plex
+pkill -9 Plex
 synoservice --restart "pkgctl-Plex Media Server"
 sleep 10
 synoservice --status "pkgctl-Plex Media Server"
