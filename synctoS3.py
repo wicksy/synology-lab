@@ -149,6 +149,12 @@ for filespec in filespecs:
 # Search for files to process
 #
   for root, directories, filenames in os.walk(DSM_MEDIA_SOURCE_DIR):
+    if DEBUG:
+      print("DEBUG: Root " + str(root))
+      for dirs in directories:
+        print("DEBUG: Directories " + str(dir))
+      for fn in filenames:
+        print("DEBUG: Filenames " + str(fn))
     for directory in directories:
       thisdir = os.path.join(root, directory)
       spec = thisdir + "/" + filespec
